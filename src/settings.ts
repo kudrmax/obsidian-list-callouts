@@ -30,6 +30,38 @@ export interface CalloutConfig {
 
 export type ListCalloutsSettings = Callout[];
 
+export function parseCalloutTags(value: string): string[] {
+  return value.trim().split(/\s+/).filter(Boolean);
+}
+
+function hasValidCalloutTags(value: string): boolean {
+  const tags = parseCalloutTags(value);
+  return (
+    tags.length > 0 &&
+    tags.every((tag) => tag.startsWith('#') && tag.length > 1)
+  );
+}
+
+function hasConflictingCalloutTags(
+  settings: Callout[],
+  value: string,
+  currentIndex?: number
+): boolean {
+  const tags = parseCalloutTags(value).map((tag) => tag.toLowerCase());
+  if (new Set(tags).size !== tags.length) return true;
+
+  const existingTags = settings.reduce<string[]>((result, callout, index) => {
+    if (callout.type === 'tag' && index !== currentIndex) {
+      result.push(
+        ...parseCalloutTags(callout.char).map((tag) => tag.toLowerCase())
+      );
+    }
+    return result;
+  }, []);
+
+  return tags.some((tag) => existingTags.includes(tag));
+}
+
 // Build a static CM6 list line with callout markup applied
 export function buildSettingCallout(root: HTMLElement, callout: Callout) {
   root.empty();
@@ -230,9 +262,12 @@ export function buildSetting(
       new TextComponent(inputContainer)
         .setValue(callout.char)
         .onChange((value) => {
-          if (!value || (callout.type === 'tag' && !value.startsWith('#'))) {
-            return;
-          }
+          const hasInvalidTags =
+            callout.type === 'tag' &&
+            (!hasValidCalloutTags(value) ||
+              hasConflictingCalloutTags(plugin.settings, value, index));
+
+          if (!value || hasInvalidTags) return;
 
           plugin.settings[index].char = value;
           plugin.saveSettings();
@@ -392,14 +427,15 @@ function buildNewCalloutSetting(
 
       const hasNoTrigger = callout.char.length === 0;
       const hasInvalidTag =
-        callout.type === 'tag' && !callout.char.startsWith('#');
-      const hasConflictingTrigger = plugin.settings.some((existing) => {
-        if (existing.type !== callout.type) return false;
-
-        return callout.type === 'tag'
-          ? existing.char.toLowerCase() === callout.char.toLowerCase()
-          : existing.char === callout.char;
-      });
+        callout.type === 'tag' &&
+        (!hasValidCalloutTags(callout.char) ||
+          hasConflictingCalloutTags(plugin.settings, callout.char));
+      const hasConflictingTrigger =
+        callout.type !== 'tag' &&
+        plugin.settings.some(
+          (existing) =>
+            existing.type !== 'tag' && existing.char === callout.char
+        );
 
       submit.setDisabled(
         hasNoTrigger || hasInvalidTag || hasConflictingTrigger

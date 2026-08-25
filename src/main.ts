@@ -9,6 +9,7 @@ import {
   CalloutConfig,
   ListCalloutSettings,
   ListCalloutsSettings,
+  parseCalloutTags,
 } from './settings';
 
 const DEFAULT_SETTINGS: ListCalloutsSettings = [
@@ -98,7 +99,9 @@ export default class ListCalloutsPlugin extends Plugin {
         return record
       }, {}),
       tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
-        record[curr.char.toLowerCase()] = curr;
+        parseCalloutTags(curr.char).forEach((tag) => {
+          record[tag.toLowerCase()] = curr;
+        });
         return record
       }, {}),
       re: new RegExp(
@@ -123,7 +126,9 @@ export default class ListCalloutsPlugin extends Plugin {
         return record
       }, {}),
       tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
-        record[curr.char.toLowerCase()] = curr;
+        parseCalloutTags(curr.char).forEach((tag) => {
+          record[tag.toLowerCase()] = curr;
+        });
         return record
       }, {}),
       re: new RegExp(

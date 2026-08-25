@@ -1,6 +1,6 @@
 import { MarkdownPostProcessor, setIcon } from 'obsidian';
 
-import { CalloutConfig } from './settings';
+import { Callout, CalloutConfig } from './settings';
 
 function getFirstTextNode(li: HTMLElement) {
   for (const node of Array.from(li.childNodes)) {
@@ -33,6 +33,47 @@ function getFirstTextNode(li: HTMLElement) {
   }
 
   return null;
+}
+
+function findTagCallout(
+  li: HTMLElement,
+  tags: Record<string, Callout>
+): Callout | null {
+  for (const tag of Array.from(li.querySelectorAll<HTMLElement>('a.tag'))) {
+    if (tag.closest('li') !== li) continue;
+
+    const callout = tags[(tag.textContent || '').toLowerCase()];
+    if (callout) return callout;
+  }
+
+  return null;
+}
+
+function insertTagMarker(li: HTMLElement, icon: string) {
+  const contentNode = Array.from(li.childNodes).find((node) => {
+    if (node.nodeType === document.TEXT_NODE) {
+      return (node.textContent || '').trim() !== '';
+    }
+
+    const element = node as HTMLElement;
+    return (
+      !element.hasClass('list-collapse-indicator') &&
+      !element.hasClass('list-bullet') &&
+      !['UL', 'OL', 'INPUT'].includes(element.tagName)
+    );
+  });
+
+  if (!contentNode) return;
+
+  contentNode.before(
+    createSpan(
+      {
+        cls: 'lc-list-marker',
+        attr: { 'aria-hidden': 'true' },
+      },
+      (span) => setIcon(span, icon)
+    )
+  );
 }
 
 function wrapLiContent(li: HTMLElement) {
@@ -83,40 +124,44 @@ export function buildPostProcessor(
 
     el.findAll('li').forEach((li) => {
       const node = getFirstTextNode(li);
-      if (!node) return;
+      const text = node?.textContent || '';
+      const match = text ? text.match(config.re) : null;
+      const characterCallout = match ? config.callouts[match[1]] : null;
+      const tagCallout =
+        !characterCallout && li.parentElement?.tagName === 'UL'
+          ? findTagCallout(li, config.tags)
+          : null;
+      const callout = characterCallout || tagCallout;
+      if (!callout) return;
 
-      const text = node.textContent;
-      if (!text) return;
+      li.addClass('lc-list-callout');
+      li.setAttribute('data-callout', callout.char);
+      li.style.setProperty('--lc-callout-color', callout.color);
 
-      const match = text.match(config.re);
-      const callout = match ? config.callouts[match[1]] : null;
-
-      if (callout) {
-        li.addClass('lc-list-callout');
-        li.setAttribute('data-callout', callout.char);
-        li.style.setProperty('--lc-callout-color', callout.color);
-
+      if (characterCallout && node) {
         node.replaceWith(
           createFragment((f) => {
             f.append(
               createSpan(
                 {
                   cls: 'lc-list-marker',
-                  text: text.slice(0, callout.char.length),
+                  text: text.slice(0, characterCallout.char.length),
                 },
                 (span) => {
-                  if (callout.icon) {
-                    setIcon(span, callout.icon);
+                  if (characterCallout.icon) {
+                    setIcon(span, characterCallout.icon);
                   }
                 }
               )
             );
-            f.append(text.slice(callout.char.length));
+            f.append(text.slice(characterCallout.char.length));
           })
         );
-
-        wrapLiContent(li);
+      } else if (tagCallout?.icon) {
+        insertTagMarker(li, tagCallout.icon);
       }
+
+      wrapLiContent(li);
     });
   };
 }

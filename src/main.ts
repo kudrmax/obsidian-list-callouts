@@ -93,25 +93,20 @@ export default class ListCalloutsPlugin extends Plugin {
     );
 
     return {
-      callouts: characterCallouts.reduce<Record<string, Callout>>(
-        (record, curr) => {
-          record[curr.char] = curr;
-          return record;
-        },
-        {}
-      ),
+      callouts: characterCallouts.reduce<Record<string, Callout>>((record, curr) => {
+        record[curr.char] = curr;
+        return record
+      }, {}),
       tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
         record[curr.char.toLowerCase()] = curr;
-        return record;
+        return record
       }, {}),
       re: new RegExp(
         `(^\\s*[-*+](?: \\[.\\])? |^\\s*\\d+[\\.\\)](?: \\[.\\])? )(${
-          characterCallouts
-            .map((callout) => escapeStringRegexp(callout.char))
-            .join('|')
+          characterCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
         }) `
       ),
-    };
+    }
   }
 
   buildPostProcessorConfig() {
@@ -123,25 +118,20 @@ export default class ListCalloutsPlugin extends Plugin {
     );
 
     this.postProcessorConfig = {
-      callouts: characterCallouts.reduce<Record<string, Callout>>(
-        (record, curr) => {
-          record[curr.char] = curr;
-          return record;
-        },
-        {}
-      ),
+      callouts: characterCallouts.reduce<Record<string, Callout>>((record, curr) => {
+        record[curr.char] = curr;
+        return record
+      }, {}),
       tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
         record[curr.char.toLowerCase()] = curr;
-        return record;
+        return record
       }, {}),
       re: new RegExp(
         `^(${
-          characterCallouts
-            .map((callout) => escapeStringRegexp(callout.char))
-            .join('|')
+          characterCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
         }) `
       ),
-    };
+    }
   }
 
   async loadSettings() {

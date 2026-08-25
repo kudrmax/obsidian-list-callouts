@@ -170,6 +170,10 @@ settings:
   pointer-events: none;
 }
 
+.lc-list-marker-tag {
+  margin-right: 0.25em;
+}
+
 .lc-list-marker > svg {
   position: relative;
   width: 1em;

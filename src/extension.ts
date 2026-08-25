@@ -48,7 +48,9 @@ export class CalloutMarker extends WidgetType {
     return createSpan(
       {
         text: this.char,
-        cls: 'lc-list-marker',
+        cls: this.char
+          ? 'lc-list-marker'
+          : 'lc-list-marker lc-list-marker-tag',
         attr: {
           'aria-hidden': 'true',
         },

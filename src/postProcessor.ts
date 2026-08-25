@@ -68,7 +68,7 @@ function insertTagMarker(li: HTMLElement, icon: string) {
   contentNode.before(
     createSpan(
       {
-        cls: 'lc-list-marker',
+        cls: 'lc-list-marker lc-list-marker-tag',
         attr: { 'aria-hidden': 'true' },
       },
       (span) => setIcon(span, icon)

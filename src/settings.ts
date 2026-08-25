@@ -89,13 +89,21 @@ export function buildSettingCallout(root: HTMLElement, callout: Callout) {
           );
           mockListLine.createSpan({ cls: 'lc-list-bg' });
           if (callout.type !== 'tag' || callout.icon) {
-            mockListLine.createSpan({ cls: 'lc-list-marker' }, (span) => {
-              if (callout.icon) {
-                setIcon(span, callout.icon);
-              } else {
-                span.appendText(callout.char);
+            mockListLine.createSpan(
+              {
+                cls:
+                  callout.type === 'tag'
+                    ? 'lc-list-marker lc-list-marker-tag'
+                    : 'lc-list-marker',
+              },
+              (span) => {
+                if (callout.icon) {
+                  setIcon(span, callout.icon);
+                } else {
+                  span.appendText(callout.char);
+                }
               }
-            });
+            );
           }
           mockListLine.createSpan({
             cls: 'cm-list-1',

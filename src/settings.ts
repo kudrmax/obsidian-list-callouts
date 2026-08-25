@@ -258,7 +258,7 @@ export function buildSetting(
     buildSettingCallout(calloutContainer, callout);
 
     el.createDiv({ cls: 'lc-input-container' }, (inputContainer) => {
-      // Character input
+      // Prefix input
       new TextComponent(inputContainer)
         .setValue(callout.char)
         .onChange((value) => {
@@ -364,13 +364,13 @@ function buildNewCalloutSetting(
       cls: 'lc-callout-container',
     });
 
-    // Callout character.
+    // Callout prefix.
     const inputContainer = settingContainer.createDiv({
       cls: 'lc-input-container',
     });
 
     new DropdownComponent(inputContainer)
-      .addOption('character', 'Character')
+      .addOption('prefix', 'Prefix')
       .addOption('tag', 'Tag')
       .onChange((value) => {
         if (value === 'tag') {
@@ -467,7 +467,7 @@ export class ListCalloutSettings extends PluginSettingTab {
         f.append(createEl('br'));
         f.append(
           createEl('strong', {
-            text: 'Note: Using +, *, -, >, or # as the callout character can disrupt reading mode.',
+            text: 'Note: Using +, *, -, >, or # as the callout prefix can disrupt reading mode.',
           })
         );
       })

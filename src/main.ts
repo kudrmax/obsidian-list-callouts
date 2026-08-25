@@ -86,7 +86,7 @@ export default class ListCalloutsPlugin extends Plugin {
   }
 
   buildEditorConfig(): CalloutConfig {
-    const characterCallouts = this.settings.filter(
+    const prefixCallouts = this.settings.filter(
       (callout) => callout.type !== 'tag'
     );
     const tagCallouts = this.settings.filter(
@@ -94,7 +94,7 @@ export default class ListCalloutsPlugin extends Plugin {
     );
 
     return {
-      callouts: characterCallouts.reduce<Record<string, Callout>>((record, curr) => {
+      callouts: prefixCallouts.reduce<Record<string, Callout>>((record, curr) => {
         record[curr.char] = curr;
         return record
       }, {}),
@@ -106,14 +106,14 @@ export default class ListCalloutsPlugin extends Plugin {
       }, {}),
       re: new RegExp(
         `(^\\s*[-*+](?: \\[.\\])? |^\\s*\\d+[\\.\\)](?: \\[.\\])? )(${
-          characterCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
+          prefixCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
         }) `
       ),
     }
   }
 
   buildPostProcessorConfig() {
-    const characterCallouts = this.settings.filter(
+    const prefixCallouts = this.settings.filter(
       (callout) => callout.type !== 'tag'
     );
     const tagCallouts = this.settings.filter(
@@ -121,7 +121,7 @@ export default class ListCalloutsPlugin extends Plugin {
     );
 
     this.postProcessorConfig = {
-      callouts: characterCallouts.reduce<Record<string, Callout>>((record, curr) => {
+      callouts: prefixCallouts.reduce<Record<string, Callout>>((record, curr) => {
         record[curr.char] = curr;
         return record
       }, {}),
@@ -133,7 +133,7 @@ export default class ListCalloutsPlugin extends Plugin {
       }, {}),
       re: new RegExp(
         `^(${
-          characterCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
+          prefixCallouts.map(callout => escapeStringRegexp(callout.char)).join('|')
         }) `
       ),
     }

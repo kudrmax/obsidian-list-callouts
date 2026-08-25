@@ -126,35 +126,35 @@ export function buildPostProcessor(
       const node = getFirstTextNode(li);
       const text = node?.textContent || '';
       const match = text ? text.match(config.re) : null;
-      const characterCallout = match ? config.callouts[match[1]] : null;
+      const prefixCallout = match ? config.callouts[match[1]] : null;
       const tagCallout =
-        !characterCallout && li.parentElement?.tagName === 'UL'
+        !prefixCallout && li.parentElement?.tagName === 'UL'
           ? findTagCallout(li, config.tags)
           : null;
-      const callout = characterCallout || tagCallout;
+      const callout = prefixCallout || tagCallout;
       if (!callout) return;
 
       li.addClass('lc-list-callout');
       li.setAttribute('data-callout', callout.char);
       li.style.setProperty('--lc-callout-color', callout.color);
 
-      if (characterCallout && node) {
+      if (prefixCallout && node) {
         node.replaceWith(
           createFragment((f) => {
             f.append(
               createSpan(
                 {
                   cls: 'lc-list-marker',
-                  text: text.slice(0, characterCallout.char.length),
+                  text: text.slice(0, prefixCallout.char.length),
                 },
                 (span) => {
-                  if (characterCallout.icon) {
-                    setIcon(span, characterCallout.icon);
+                  if (prefixCallout.icon) {
+                    setIcon(span, prefixCallout.icon);
                   }
                 }
               )
             );
-            f.append(text.slice(characterCallout.char.length));
+            f.append(text.slice(prefixCallout.char.length));
           })
         );
       } else if (tagCallout?.icon) {

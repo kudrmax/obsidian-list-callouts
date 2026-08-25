@@ -153,10 +153,10 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
         if (prop && /formatting-list/.test(prop)) {
           const { from: lineFrom, to, text } = doc.lineAt(from);
           const match = text.match(config.re);
-          const characterCallout = match ? config.callouts[match[2]] : null;
+          const prefixCallout = match ? config.callouts[match[2]] : null;
           const isBullet = /formatting-list-ul/.test(prop);
           const callout =
-            characterCallout ||
+            prefixCallout ||
             (isBullet
               ? findTagCallout(tree, state, lineFrom, to, config.tags)
               : null);
@@ -174,15 +174,15 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
               Decoration.widget({ widget: new CalloutBackground(), side: -1 })
             );
 
-            if (characterCallout && match) {
+            if (prefixCallout && match) {
               const labelPos = lineFrom + match[1].length;
               builder.add(
                 labelPos,
-                labelPos + characterCallout.char.length,
+                labelPos + prefixCallout.char.length,
                 Decoration.replace({
                   widget: new CalloutMarker(
-                    characterCallout.char,
-                    characterCallout.icon
+                    prefixCallout.char,
+                    prefixCallout.icon
                   ),
                 })
               );

@@ -1,5 +1,1 @@
-- Add tag-triggered callouts for unordered lists in Live Preview and Reading View
-- Allow multiple tags in one callout rule; the first matching tag in the line wins
-- Add optional, default-on trigger tag hiding with active-line reveal in Live Preview
-- Fix spacing after tag callout icons
-- Rename the Character rule type to Prefix in settings
+- Rename the plugin to List Callouts Enhanced

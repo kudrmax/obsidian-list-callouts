@@ -15,7 +15,7 @@ import {
 } from '@codemirror/view';
 import { setIcon } from 'obsidian';
 
-import { CalloutConfig } from './settings';
+import { Callout, CalloutConfig } from './settings';
 
 export const setConfig = StateEffect.define<CalloutConfig>();
 
@@ -90,6 +90,47 @@ export const calloutsConfigField = StateField.define<CalloutConfig>({
   },
 });
 
+function findTagCallout(
+  tree: ReturnType<typeof ensureSyntaxTree>,
+  state: EditorState,
+  from: number,
+  to: number,
+  tags: Record<string, Callout>
+): Callout | null {
+  let callout: Callout = null;
+  let tagFrom: number = null;
+
+  tree.iterate({
+    from,
+    to,
+    enter({ type, from: nodeFrom, to: nodeTo }): false | void {
+      if (callout) return false;
+
+      const prop = type.prop(tokenClassNodeProp);
+      if (!prop || !/(^| )hashtag( |$)/.test(prop)) {
+        tagFrom = null;
+        return;
+      }
+
+      if (/hashtag-begin/.test(prop)) {
+        tagFrom = nodeFrom;
+      }
+
+      if (tagFrom === null || !/hashtag-end/.test(prop)) return;
+
+      const tag = state.doc.sliceString(tagFrom, nodeTo).toLowerCase();
+      const match = tags[tag];
+      tagFrom = null;
+      if (!match) return;
+
+      callout = match;
+      return false;
+    },
+  });
+
+  return callout;
+}
+
 export function buildCalloutDecos(view: EditorView, state: EditorState) {
   const config = state.field(calloutsConfigField);
   if (!config?.re || !view.visibleRanges.length) return Decoration.none;
@@ -112,13 +153,17 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
         if (prop && /formatting-list/.test(prop)) {
           const { from: lineFrom, to, text } = doc.lineAt(from);
           const match = text.match(config.re);
-          const callout = match ? config.callouts[match[2]] : null;
+          const characterCallout = match ? config.callouts[match[2]] : null;
+          const isBullet = /formatting-list-ul/.test(prop);
+          const callout =
+            characterCallout ||
+            (isBullet
+              ? findTagCallout(tree, state, lineFrom, to, config.tags)
+              : null);
 
           lastEnd = to;
 
           if (callout) {
-            const labelPos = lineFrom + match[1].length;
-
             // Set the line class and callout color
             builder.add(lineFrom, lineFrom, calloutDecoration(callout.char, callout.color));
 
@@ -129,14 +174,32 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
               Decoration.widget({ widget: new CalloutBackground(), side: -1 })
             );
 
-            // Decorate the callout marker
-            builder.add(
-              labelPos,
-              labelPos + callout.char.length,
-              Decoration.replace({
-                widget: new CalloutMarker(callout.char, callout.icon),
-              })
-            );
+            if (characterCallout && match) {
+              const labelPos = lineFrom + match[1].length;
+              builder.add(
+                labelPos,
+                labelPos + characterCallout.char.length,
+                Decoration.replace({
+                  widget: new CalloutMarker(
+                    characterCallout.char,
+                    characterCallout.icon
+                  ),
+                })
+              );
+            } else if (callout.icon) {
+              const prefix = text.match(/^\s*[-*+](?: \[.\])? /);
+              if (prefix) {
+                const markerPos = lineFrom + prefix[0].length;
+                builder.add(
+                  markerPos,
+                  markerPos,
+                  Decoration.widget({
+                    widget: new CalloutMarker('', callout.icon),
+                    side: 1,
+                  })
+                );
+              }
+            }
           }
         }
       },

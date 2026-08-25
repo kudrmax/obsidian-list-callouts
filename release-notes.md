@@ -1,1 +1,1 @@
-- Rename the plugin to List Callouts Enhanced
+- Hide the complete tag pill when trigger tag hiding is enabled

@@ -175,11 +175,15 @@ settings:
 }
 
 .markdown-source-view.is-live-preview .lc-hidden-tag,
+.markdown-source-view.is-live-preview .cm-hashtag:has(.lc-hidden-tag),
 .markdown-preview-view .lc-hidden-tag {
   display: none;
 }
 
-.markdown-source-view.is-live-preview .cm-active .lc-hidden-tag {
+.markdown-source-view.is-live-preview .cm-active .lc-hidden-tag,
+.markdown-source-view.is-live-preview
+  .cm-active
+  .cm-hashtag:has(.lc-hidden-tag) {
   display: inline;
 }
 

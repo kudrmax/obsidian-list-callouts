@@ -174,6 +174,15 @@ settings:
   margin-right: 0.25em;
 }
 
+.markdown-source-view.is-live-preview .lc-hidden-tag,
+.markdown-preview-view .lc-hidden-tag {
+  display: none;
+}
+
+.markdown-source-view.is-live-preview .cm-active .lc-hidden-tag {
+  display: inline;
+}
+
 .lc-list-marker > svg {
   position: relative;
   width: 1em;

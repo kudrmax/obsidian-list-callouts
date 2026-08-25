@@ -92,21 +92,27 @@ export const calloutsConfigField = StateField.define<CalloutConfig>({
   },
 });
 
+interface TagCalloutMatch {
+  callout: Callout;
+  from: number;
+  to: number;
+}
+
 function findTagCallout(
   tree: ReturnType<typeof ensureSyntaxTree>,
   state: EditorState,
   from: number,
   to: number,
   tags: Record<string, Callout>
-): Callout | null {
-  let callout: Callout = null;
+): TagCalloutMatch | null {
+  let match: TagCalloutMatch = null;
   let tagFrom: number = null;
 
   tree.iterate({
     from,
     to,
     enter({ type, from: nodeFrom, to: nodeTo }): false | void {
-      if (callout) return false;
+      if (match) return false;
 
       const prop = type.prop(tokenClassNodeProp);
       if (!prop || !/(^| )hashtag( |$)/.test(prop)) {
@@ -120,17 +126,18 @@ function findTagCallout(
 
       if (tagFrom === null || !/hashtag-end/.test(prop)) return;
 
-      const tag = state.doc.sliceString(tagFrom, nodeTo).toLowerCase();
-      const match = tags[tag];
+      const from = tagFrom;
+      const tag = state.doc.sliceString(from, nodeTo).toLowerCase();
+      const callout = tags[tag];
       tagFrom = null;
-      if (!match) return;
+      if (!callout) return;
 
-      callout = match;
+      match = { callout, from, to: nodeTo };
       return false;
     },
   });
 
-  return callout;
+  return match;
 }
 
 export function buildCalloutDecos(view: EditorView, state: EditorState) {
@@ -157,11 +164,11 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
           const match = text.match(config.re);
           const prefixCallout = match ? config.callouts[match[2]] : null;
           const isBullet = /formatting-list-ul/.test(prop);
-          const callout =
-            prefixCallout ||
-            (isBullet
+          const tagMatch =
+            !prefixCallout && isBullet
               ? findTagCallout(tree, state, lineFrom, to, config.tags)
-              : null);
+              : null;
+          const callout = prefixCallout || tagMatch?.callout;
 
           lastEnd = to;
 
@@ -201,6 +208,14 @@ export function buildCalloutDecos(view: EditorView, state: EditorState) {
                   })
                 );
               }
+            }
+
+            if (tagMatch && callout.hideTag !== false) {
+              builder.add(
+                tagMatch.from,
+                tagMatch.to,
+                Decoration.mark({ class: 'lc-hidden-tag' })
+              );
             }
           }
         }

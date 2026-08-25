@@ -2,6 +2,11 @@ import { MarkdownPostProcessor, setIcon } from 'obsidian';
 
 import { Callout, CalloutConfig } from './settings';
 
+interface TagCalloutMatch {
+  callout: Callout;
+  tag: HTMLElement;
+}
+
 function getFirstTextNode(li: HTMLElement) {
   for (const node of Array.from(li.childNodes)) {
     if (node.nodeType === document.ELEMENT_NODE && (node as HTMLElement).classList.contains('tasks-list-text')) {
@@ -38,12 +43,12 @@ function getFirstTextNode(li: HTMLElement) {
 function findTagCallout(
   li: HTMLElement,
   tags: Record<string, Callout>
-): Callout | null {
+): TagCalloutMatch | null {
   for (const tag of Array.from(li.querySelectorAll<HTMLElement>('a.tag'))) {
     if (tag.closest('li') !== li) continue;
 
     const callout = tags[(tag.textContent || '').toLowerCase()];
-    if (callout) return callout;
+    if (callout) return { callout, tag };
   }
 
   return null;
@@ -127,10 +132,11 @@ export function buildPostProcessor(
       const text = node?.textContent || '';
       const match = text ? text.match(config.re) : null;
       const prefixCallout = match ? config.callouts[match[1]] : null;
-      const tagCallout =
+      const tagMatch =
         !prefixCallout && li.parentElement?.tagName === 'UL'
           ? findTagCallout(li, config.tags)
           : null;
+      const tagCallout = tagMatch?.callout;
       const callout = prefixCallout || tagCallout;
       if (!callout) return;
 
@@ -159,6 +165,10 @@ export function buildPostProcessor(
         );
       } else if (tagCallout?.icon) {
         insertTagMarker(li, tagCallout.icon);
+      }
+
+      if (tagMatch && tagCallout.hideTag !== false) {
+        tagMatch.tag.addClass('lc-hidden-tag');
       }
 
       wrapLiContent(li);

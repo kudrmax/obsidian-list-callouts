@@ -6,6 +6,7 @@ import {
   PluginSettingTab,
   Setting,
   TextComponent,
+  ToggleComponent,
   debounce,
   getIconIds,
   setIcon,
@@ -20,6 +21,7 @@ export interface Callout {
   icon?: string;
   custom?: boolean;
   type?: 'tag';
+  hideTag?: boolean;
 }
 
 export interface CalloutConfig {
@@ -344,6 +346,15 @@ export function buildSetting(
           });
       }
     });
+
+    if (callout.type === 'tag') {
+      new Setting(el).setName('Hide tag').addToggle((toggle) =>
+        toggle.setValue(callout.hideTag !== false).onChange((value) => {
+          plugin.settings[index].hideTag = value;
+          plugin.saveSettings();
+        })
+      );
+    }
   });
 }
 
@@ -376,6 +387,7 @@ function buildNewCalloutSetting(
     const inputContainer = settingContainer.createDiv({
       cls: 'lc-input-container',
     });
+    let hideTagToggle: ToggleComponent;
 
     new DropdownComponent(inputContainer)
       .addOption('prefix', 'Prefix')
@@ -383,8 +395,13 @@ function buildNewCalloutSetting(
       .onChange((value) => {
         if (value === 'tag') {
           callout.type = 'tag';
+          delete callout.hideTag;
+          hideTagToggle.setValue(true);
+          hideTagSetting.settingEl.show();
         } else {
           delete callout.type;
+          delete callout.hideTag;
+          hideTagSetting.settingEl.hide();
         }
         redraw();
       });
@@ -428,6 +445,16 @@ function buildNewCalloutSetting(
       .onClick(() => {
         onSubmit(callout);
       });
+
+    const hideTagSetting = new Setting(settingContainer)
+      .setName('Hide tag')
+      .addToggle((toggle) => {
+        hideTagToggle = toggle.setValue(true).onChange((value) => {
+          callout.hideTag = value;
+        });
+      });
+
+    hideTagSetting.settingEl.hide();
 
     // Redraw callout/settings.
     function redraw() {

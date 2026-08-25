@@ -85,31 +85,63 @@ export default class ListCalloutsPlugin extends Plugin {
   }
 
   buildEditorConfig(): CalloutConfig {
+    const characterCallouts = this.settings.filter(
+      (callout) => callout.type !== 'tag'
+    );
+    const tagCallouts = this.settings.filter(
+      (callout) => callout.type === 'tag'
+    );
+
     return {
-      callouts: this.settings.reduce<Record<string, Callout>>((record, curr) => {
-        record[curr.char] = curr;
-        return record
+      callouts: characterCallouts.reduce<Record<string, Callout>>(
+        (record, curr) => {
+          record[curr.char] = curr;
+          return record;
+        },
+        {}
+      ),
+      tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
+        record[curr.char.toLowerCase()] = curr;
+        return record;
       }, {}),
       re: new RegExp(
         `(^\\s*[-*+](?: \\[.\\])? |^\\s*\\d+[\\.\\)](?: \\[.\\])? )(${
-          this.settings.map(callout => escapeStringRegexp(callout.char)).join('|')
+          characterCallouts
+            .map((callout) => escapeStringRegexp(callout.char))
+            .join('|')
         }) `
       ),
-    }
+    };
   }
 
   buildPostProcessorConfig() {
+    const characterCallouts = this.settings.filter(
+      (callout) => callout.type !== 'tag'
+    );
+    const tagCallouts = this.settings.filter(
+      (callout) => callout.type === 'tag'
+    );
+
     this.postProcessorConfig = {
-      callouts: this.settings.reduce<Record<string, Callout>>((record, curr) => {
-        record[curr.char] = curr;
-        return record
+      callouts: characterCallouts.reduce<Record<string, Callout>>(
+        (record, curr) => {
+          record[curr.char] = curr;
+          return record;
+        },
+        {}
+      ),
+      tags: tagCallouts.reduce<Record<string, Callout>>((record, curr) => {
+        record[curr.char.toLowerCase()] = curr;
+        return record;
       }, {}),
       re: new RegExp(
         `^(${
-          this.settings.map(callout => escapeStringRegexp(callout.char)).join('|')
+          characterCallouts
+            .map((callout) => escapeStringRegexp(callout.char))
+            .join('|')
         }) `
       ),
-    }
+    };
   }
 
   async loadSettings() {

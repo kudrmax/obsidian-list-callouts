@@ -1,6 +1,7 @@
 import {
   ButtonComponent,
   ColorComponent,
+  DropdownComponent,
   Platform,
   PluginSettingTab,
   Setting,
@@ -18,10 +19,12 @@ export interface Callout {
   color: string;
   icon?: string;
   custom?: boolean;
+  type?: 'tag';
 }
 
 export interface CalloutConfig {
   callouts: Record<string, Callout>;
+  tags: Record<string, Callout>;
   re: RegExp;
 }
 
@@ -53,16 +56,21 @@ export function buildSettingCallout(root: HTMLElement, callout: Callout) {
             }
           );
           mockListLine.createSpan({ cls: 'lc-list-bg' });
-          mockListLine.createSpan({ cls: 'lc-list-marker' }, (span) => {
-            if (callout.icon) {
-              setIcon(span, callout.icon);
-            } else {
-              span.appendText(callout.char);
-            }
-          });
+          if (callout.type !== 'tag' || callout.icon) {
+            mockListLine.createSpan({ cls: 'lc-list-marker' }, (span) => {
+              if (callout.icon) {
+                setIcon(span, callout.icon);
+              } else {
+                span.appendText(callout.char);
+              }
+            });
+          }
           mockListLine.createSpan({
             cls: 'cm-list-1',
-            text: ' Sed eu nisl rhoncus, consectetur mi quis, scelerisque enim.',
+            text:
+              callout.type === 'tag'
+                ? ` Sed eu nisl rhoncus ${callout.char}`
+                : ' Sed eu nisl rhoncus, consectetur mi quis, scelerisque enim.',
           });
         }
       );
@@ -222,7 +230,9 @@ export function buildSetting(
       new TextComponent(inputContainer)
         .setValue(callout.char)
         .onChange((value) => {
-          if (!value) return;
+          if (!value || (callout.type === 'tag' && !value.startsWith('#'))) {
+            return;
+          }
 
           plugin.settings[index].char = value;
           plugin.saveSettings();
@@ -324,7 +334,19 @@ function buildNewCalloutSetting(
       cls: 'lc-input-container',
     });
 
-    const char = new TextComponent(inputContainer)
+    new DropdownComponent(inputContainer)
+      .addOption('character', 'Character')
+      .addOption('tag', 'Tag')
+      .onChange((value) => {
+        if (value === 'tag') {
+          callout.type = 'tag';
+        } else {
+          delete callout.type;
+        }
+        redraw();
+      });
+
+    new TextComponent(inputContainer)
       .setValue('')
       .setPlaceholder('...')
       .onChange((value) => {
@@ -368,11 +390,20 @@ function buildNewCalloutSetting(
     function redraw() {
       buildSettingCallout(calloutContainer, callout);
 
-      const hasNoCharacter = callout.char.length === 0;
-      const hasConflictingCharacter =
-        plugin.settings.find((c) => c.char === char.getValue()) !== undefined;
+      const hasNoTrigger = callout.char.length === 0;
+      const hasInvalidTag =
+        callout.type === 'tag' && !callout.char.startsWith('#');
+      const hasConflictingTrigger = plugin.settings.some((existing) => {
+        if (existing.type !== callout.type) return false;
 
-      submit.setDisabled(hasNoCharacter || hasConflictingCharacter);
+        return callout.type === 'tag'
+          ? existing.char.toLowerCase() === callout.char.toLowerCase()
+          : existing.char === callout.char;
+      });
+
+      submit.setDisabled(
+        hasNoTrigger || hasInvalidTag || hasConflictingTrigger
+      );
     }
 
     redraw();

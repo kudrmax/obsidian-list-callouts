@@ -1,1 +1,1 @@
-- Hide the complete tag pill when trigger tag hiding is enabled
+- Fix excessive settings preview height when settings open in a separate window

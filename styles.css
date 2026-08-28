@@ -248,6 +248,10 @@ settings:
   margin-bottom: 10px;
 }
 
+.lc-callout-container > .markdown-source-view {
+  height: auto;
+}
+
 .lc-input-container {
   display: flex;
   align-items: center;
